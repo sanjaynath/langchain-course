@@ -1,7 +1,10 @@
 from tabnanny import verbose
+from xxlimited import Str
 from dotenv import load_dotenv
 import os
 load_dotenv()
+
+from pydantic import BaseModel, Field
 
 from langchain_groq import ChatGroq
 from langchain.agents import create_agent
@@ -14,6 +17,16 @@ from tavily import TavilyClient
 from langchain_tavily import TavilySearch
 
 tavily  = TavilyClient()
+
+class Source(BaseModel):
+    """Schema for a source used by the agent"""
+    url:str = Field(description="The url of the source")
+
+class AgentResponse(BaseModel):
+    """Schema for the agent response"""
+
+    answer:str = Field(description="The agent's answer to the query")
+    sources:list[Source] = Field(default_factory=list, description="List of Sources used to generate the answer")
 
 '''
 @tool
@@ -60,7 +73,7 @@ def main():
         print(t.name)
 
     #print("Model:", llm_gem)
-    agent = create_agent(model=llm, tools=tools)
+    agent = create_agent(model=llm_gem, tools=tools, response_format=AgentResponse)
     #result = agent.invoke({"messages": [HumanMessage(content="Use the sclearearch_sanjay tool to find the weather in Tokyo. You must use the tool. And call it only once")]})
     result = agent.invoke({"messages": [HumanMessage(content="Give me links to 2 open job postings for Data Engineer role in Amazon in Hyderabad area")]})
     
